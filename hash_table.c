@@ -103,6 +103,17 @@ void print_all(HashTable* table) {
 }
 // Carrega os concursos de um arquivo CSV e os insere na tabela hash.
 // Cada linha do arquivo representa um concurso com seu número, data e números sorteados.
+// Função auxiliar para determinar o delimitador com base na extensão do arquivo
+static char determine_delimiter(const char* filename) {
+    const char *ext = strrchr(filename, '.');
+    if (ext && strcmp(ext, ".tsv") == 0) {
+        return '\t'; // Delimitador para .tsv
+    }
+    return ','; // Delimitador padrão para .csv
+}
+
+// Carrega os concursos de um arquivo CSV ou TSV e os insere na tabela hash.
+// A função determina o delimitador baseado na extensão do arquivo.
 void load_from_file(HashTable* table, const char* filename) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
@@ -110,21 +121,22 @@ void load_from_file(HashTable* table, const char* filename) {
         return;
     }
 
+    char delimiter = determine_delimiter(filename);
     char line[256];
-    fgets(line, sizeof(line), file); // Skip header line
+    fgets(line, sizeof(line), file); // Pula a linha de cabeçalho
 
     while (fgets(line, sizeof(line), file)) {
         Concurso concurso;
-        sscanf(line, "%d,%10[^,],%d,%d,%d,%d,%d,%d",
-               &concurso.numero,
-               concurso.data,
-               &concurso.bolas[0],
-               &concurso.bolas[1],
-               &concurso.bolas[2],
-               &concurso.bolas[3],
-               &concurso.bolas[4],
+        sscanf(line, "%d%c%10[^%c]%c%d%c%d%c%d%c%d%c%d%c%d",
+               &concurso.numero, &delimiter,
+               concurso.data, &delimiter,
+               &concurso.bolas[0], &delimiter,
+               &concurso.bolas[1], &delimiter,
+               &concurso.bolas[2], &delimiter,
+               &concurso.bolas[3], &delimiter,
+               &concurso.bolas[4], &delimiter,
                &concurso.bolas[5]);
-        concurso.next = NULL; // Initialize next pointer
+        concurso.next = NULL; // Inicializa o ponteiro next
         insert(table, concurso);
     }
 
